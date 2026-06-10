@@ -30,15 +30,15 @@ with st.sidebar:
 
     mode_settings = {
         "Quick Answer": {
-            "top_k": 3,
+            "top_k": 2,
             "description": "Fast, concise answers."
         },
         "Standard": {
-            "top_k": 5,
+            "top_k": 3,
             "description": "Balanced answer with good context."
         },
         "Research Mode": {
-            "top_k": 7,
+            "top_k": 5,
             "description": "Detailed answer using more PDF context."
         }
     }

@@ -2,31 +2,49 @@ import json
 import time
 import random
 import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
 from config import AWS_REGION, BEDROCK_MODEL_ID, EMBEDDING_MODEL_ID
 
 
-client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+client = boto3.client(
+    "bedrock-runtime",
+    region_name=AWS_REGION,
+    config=Config(
+        retries={
+            "max_attempts": 10,
+            "mode": "adaptive"
+        }
+    )
+)
 
 
-def invoke_with_retry(model_id, body, max_retries=5):
+def invoke_with_retry(model_id, body, max_retries=8):
     for attempt in range(max_retries):
         try:
             return client.invoke_model(
                 modelId=model_id,
-                body=json.dumps(body)
+                body=json.dumps(body),
+                contentType="application/json",
+                accept="application/json"
             )
-        except client.exceptions.ThrottlingException:
-            wait = (2 ** attempt) + random.uniform(0, 1)
-            time.sleep(wait)
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
 
-    raise Exception("Bedrock is still throttling after retries. Try again later.")
+            if error_code in ["ThrottlingException", "TooManyRequestsException", "ServiceQuotaExceededException"]:
+                wait = min(30, (2 ** attempt) + random.uniform(0, 1))
+                time.sleep(wait)
+            else:
+                raise
+
+    raise Exception("Bedrock is throttling. Wait 1–2 minutes and try again.")
 
 
 def get_embedding(text):
     response = invoke_with_retry(
         EMBEDDING_MODEL_ID,
         {
-            "inputText": text
+            "inputText": text[:8000]
         }
     )
 
@@ -45,7 +63,7 @@ def generate_answer(prompt):
                 }
             ],
             "inferenceConfig": {
-                "maxTokens": 900,
+                "maxTokens": 700,
                 "temperature": 0
             }
         }
