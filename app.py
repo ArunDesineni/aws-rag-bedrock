@@ -38,7 +38,7 @@ with st.sidebar:
             "description": "Balanced answer with good context."
         },
         "Research Mode": {
-            "top_k": 10,
+            "top_k": 7,
             "description": "Detailed answer using more PDF context."
         }
     }

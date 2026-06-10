@@ -1,5 +1,4 @@
 .env
 data/pdfs/
-vectorstore/
 __pycache__/
 *.pyc
